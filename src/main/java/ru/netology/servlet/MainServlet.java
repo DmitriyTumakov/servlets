@@ -11,9 +11,13 @@ import javax.servlet.http.HttpServletResponse;
 
 public class MainServlet extends HttpServlet {
   private PostController controller;
-  private String path;
-  private String  method;
-  private long id;
+
+  private static final String METHOD_GET = "GET";
+  private static final String METHOD_POST = "POST";
+  private static final String METHOD_DELETE = "DELETE";
+  private static final String PATH_SEPARATOR = "/";
+  private static final String PATH = "/api/posts";
+  private static final String PATH_WITH_ID = PATH + "/\\d+";
 
     @Override
   public void init() {
@@ -25,27 +29,27 @@ public class MainServlet extends HttpServlet {
   @Override
   protected void service(HttpServletRequest req, HttpServletResponse resp) {
     // если деплоились в root context, то достаточно этого
-    path = req.getRequestURI();
-    method = req.getMethod();
+    final var path = req.getRequestURI();
+    final var method = req.getMethod();
     try {
       // primitive routing
-      if (method.equals("GET") && path.equals("/api/posts")) {
+      if (method.equals(METHOD_GET) && path.equals(PATH)) {
         controller.all(resp);
         return;
       }
-      if (method.equals("GET") && path.matches("/api/posts/\\d+")) {
+      if (method.equals(METHOD_GET) && path.matches(PATH_WITH_ID)) {
         // easy way
-        id = Long.parseLong(path.substring(path.lastIndexOf("/") + 1));
+        final var id = Long.parseLong(path.substring(path.lastIndexOf(PATH_SEPARATOR) + 1));
         controller.getById(id, resp);
         return;
       }
-      if (method.equals("POST") && path.equals("/api/posts")) {
+      if (method.equals(METHOD_POST) && path.equals(PATH)) {
         controller.save(req.getReader(), resp);
         return;
       }
-      if (method.equals("DELETE") && path.matches("/api/posts/\\d+")) {
+      if (method.equals(METHOD_DELETE) && path.matches(PATH_WITH_ID)) {
         // easy way
-        id = Long.parseLong(path.substring(path.lastIndexOf("/") + 1));
+        final var id = Long.parseLong(path.substring(path.lastIndexOf(PATH_SEPARATOR) + 1));
         controller.removeById(id, resp);
         return;
       }
