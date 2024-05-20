@@ -4,42 +4,37 @@ import ru.netology.exception.NotFoundException;
 import ru.netology.model.Post;
 
 import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 // Stub
 public class PostRepository {
-  private final List<Post> allPosts = new ArrayList<>();
-  private static int counter = 1;
+//  private final List<Post> allPosts = new ArrayList<>();
+  private final Map<Long, Post> allPosts = new ConcurrentHashMap<>();
+  private static AtomicLong counter = new AtomicLong(1);
+
   public List<Post> all() {
-    return allPosts;
+    return new ArrayList<Post>(allPosts.values());
   }
 
   public Optional<Post> getById(long id) {
-      for (Post postObject : allPosts) {
-          if (id == postObject.getId()) {
-              return Optional.of(postObject);
-          }
-      }
+    if (allPosts.containsKey(id)) {
+      return Optional.of(allPosts.get(id));
+    }
     throw new NotFoundException();
   }
 
   public Post save(Post post) {
     if (post.getId() == 0) {
-      post.setId(counter);
-      allPosts.add(post);
-      counter++;
+      post.setId(counter.get());
+      allPosts.put(post.getId(), post);
+      counter.getAndIncrement();
       return post;
     } else if (post.getId() >= 1) {
-      int postId = (int) post.getId();
-
-      for (Post postObject : allPosts) {
-        if (postObject.getId() == postId) {
-          allPosts.get(postId - 1).setContent(post.getContent());
-          return post;
-        }
+      if (allPosts.containsKey(post.getId())) {
+        allPosts.get(post.getId()).setContent(post.getContent());
+        return post;
       }
       throw new NotFoundException();
     }
@@ -47,11 +42,9 @@ public class PostRepository {
   }
 
   public void removeById(long id) {
-    for (int i = 0; i < allPosts.size(); i++) {
-      if (id == allPosts.get(i).getId()) {
-        allPosts.remove(i);
-        return;
-      }
+    if (allPosts.containsKey(id)) {
+      allPosts.remove(id);
+      return;
     }
     throw new NotFoundException();
   }

@@ -11,8 +11,11 @@ import javax.servlet.http.HttpServletResponse;
 
 public class MainServlet extends HttpServlet {
   private PostController controller;
+  private String path;
+  private String  method;
+  private long id;
 
-  @Override
+    @Override
   public void init() {
     final var repository = new PostRepository();
     final var service = new PostService(repository);
@@ -22,9 +25,9 @@ public class MainServlet extends HttpServlet {
   @Override
   protected void service(HttpServletRequest req, HttpServletResponse resp) {
     // если деплоились в root context, то достаточно этого
+    path = req.getRequestURI();
+    method = req.getMethod();
     try {
-      final var path = req.getRequestURI();
-      final var method = req.getMethod();
       // primitive routing
       if (method.equals("GET") && path.equals("/api/posts")) {
         controller.all(resp);
@@ -32,14 +35,9 @@ public class MainServlet extends HttpServlet {
       }
       if (method.equals("GET") && path.matches("/api/posts/\\d+")) {
         // easy way
-        try {
-          final var id = Long.parseLong(path.substring(path.lastIndexOf("/") + 1));
-          controller.getById(id, resp);
-          return;
-        } catch (NotFoundException e) {
-          e.printStackTrace();
-          resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        }
+        id = Long.parseLong(path.substring(path.lastIndexOf("/") + 1));
+        controller.getById(id, resp);
+        return;
       }
       if (method.equals("POST") && path.equals("/api/posts")) {
         controller.save(req.getReader(), resp);
@@ -47,15 +45,13 @@ public class MainServlet extends HttpServlet {
       }
       if (method.equals("DELETE") && path.matches("/api/posts/\\d+")) {
         // easy way
-        try {
-          final var id = Long.parseLong(path.substring(path.lastIndexOf("/") + 1));
-          controller.removeById(id, resp);
-          return;
-        } catch (NotFoundException e) {
-          e.printStackTrace();
-          resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        }
+        id = Long.parseLong(path.substring(path.lastIndexOf("/") + 1));
+        controller.removeById(id, resp);
+        return;
       }
+      resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+    } catch (NotFoundException nfe) {
+      nfe.printStackTrace();
       resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
     } catch (Exception e) {
       e.printStackTrace();
